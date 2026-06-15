@@ -1,0 +1,74 @@
+"use client";
+
+import Link from "next/link";
+import ThemeToggle from "./theme-toggle";
+import { PenTool } from "lucide-react";
+
+export default function Navbar() {
+  return (
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-black/30 border-b border-white/10">
+      <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+
+        <Link
+          href="/"
+          className="flex items-center gap-3"
+        >
+          <div className="p-2 rounded-xl bg-white/10">
+            <PenTool size={20} />
+          </div>
+
+          <div>
+            <h1 className="heading-font text-2xl font-bold">
+              Moheen's Poetry
+            </h1>
+
+            <p className="text-xs text-slate-400">
+              Moeen Mukhtar
+            </p>
+          </div>
+        </Link>
+
+        <div className="hidden md:flex items-center gap-8">
+
+          <Link
+            href="/"
+            className="hover:text-purple-400 transition"
+          >
+            Home
+          </Link>
+
+          <Link
+            href="/poems"
+            className="hover:text-purple-400 transition"
+          >
+            Poems
+          </Link>
+
+          <Link
+            href="/about"
+            className="hover:text-purple-400 transition"
+          >
+            About
+          </Link>
+
+          <Link
+            href="/contact"
+            className="hover:text-purple-400 transition"
+          >
+            Contact
+          </Link>
+
+          <ThemeToggle />
+        </div>
+      </nav>
+    </header>
+  );
+}
+<Link href="/contact">
+  Contact
+</Link>
+
+
+
+
+

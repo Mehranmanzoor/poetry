@@ -5,22 +5,56 @@
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter);
+}
+
+.heading-font {
+  font-family: var(--font-playfair);
+}
+
+.poetry-font {
+  font-family: var(--font-cormorant);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at top,
+      rgba(120,119,198,.15),
+      transparent 40%
+    ),
+    #09090b;
+}
+
+.glass {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.feed-bg {
+  background:
+  radial-gradient(
+    circle at top left,
+    rgba(168,85,247,.15),
+    transparent
+  ),
+  radial-gradient(
+    circle at bottom right,
+    rgba(59,130,246,.15),
+    transparent
+  );
 }

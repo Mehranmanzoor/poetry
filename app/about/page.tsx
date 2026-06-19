@@ -27,7 +27,7 @@ export default function AboutPage() {
             mt-8
             "
           >
-            Moeen Mukhtar
+            Moheen Mukhtar
           </h1>
 
           <p

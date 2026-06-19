@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 // Navbar and Footer are provided by the root layout
 
 export default function AboutPage() {
@@ -7,17 +9,16 @@ export default function AboutPage() {
 
         <div className="text-center">
 
-          <div
-            className="
-            h-40
-            w-40
-            mx-auto
-            rounded-full
-            bg-gradient-to-br
-            from-purple-600
-            to-blue-600
-            "
-          />
+          <div className="relative w-40 h-40 mx-auto rounded-full overflow-hidden border-4 border-white shadow-xl">
+            <Image
+              src="/about.jpg"
+              alt="Moheen Mukhtar portrait"
+              fill
+              sizes="160px"
+              className="object-cover"
+              priority
+            />
+          </div>
 
           <h1
             className="

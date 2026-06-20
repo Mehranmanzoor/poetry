@@ -2,17 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { usePoems } from "@/hooks/use-poems";
 
 export default function Dashboard() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
-  const { poems, addPoem, deletePoem } = usePoems();
+  const { poems, loading: poemsLoading, error, addPoem, deletePoem } = usePoems();
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [content, setContent] = useState("");
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -20,26 +22,55 @@ export default function Dashboard() {
     }
   }, [loading, user, router]);
 
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
   const handleAddPoem = async () => {
-    if (!title || !content) return;
+    if (!title || !content) {
+      toast.error("Title and poem content are required.");
+      return;
+    }
 
-    const newPoem = {
-      title,
-      category,
-      content,
-      slug: title.toLowerCase().replace(/\s+/g, "-"),
-      createdAt: new Date().toISOString(),
-    };
+    setPublishing(true);
 
-    await addPoem(newPoem);
+    try {
+      await addPoem({
+        title,
+        category,
+        content,
+        slug: title
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9\s-]/g, "")
+          .replace(/\s+/g, "-"),
+        createdAt: new Date().toISOString(),
+      });
 
-    setTitle("");
-    setCategory("");
-    setContent("");
+      setTitle("");
+      setCategory("");
+      setContent("");
+      toast.success("Poem published. It is now visible on the poems page.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to publish poem."
+      );
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const handleDeletePoem = async (id: string) => {
-    await deletePoem(id);
+    try {
+      await deletePoem(id);
+      toast.success("Poem deleted.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete poem."
+      );
+    }
   };
 
   const handleLogout = async () => {
@@ -105,15 +136,17 @@ export default function Dashboard() {
 
         <button
           onClick={handleAddPoem}
+          disabled={publishing}
           className="
           bg-white
           text-black
           px-6
           py-3
           rounded-xl
+          disabled:opacity-60
           "
         >
-          Publish Poem
+          {publishing ? "Publishing..." : "Publish Poem"}
         </button>
 
       </div>
@@ -124,39 +157,47 @@ export default function Dashboard() {
           Published Poems
         </h2>
 
-        {poems.map((poem) => (
+        {poemsLoading ? (
+          <p className="text-slate-400">Loading poems...</p>
+        ) : poems.length === 0 ? (
+          <p className="text-slate-400">
+            No poems yet. Publish one above and it will appear here and on the public poems page.
+          </p>
+        ) : (
+          poems.map((poem) => (
 
-          <div
-            key={poem.id}
-            className="
-            glass
-            p-5
-            rounded-2xl
-            mb-4
-            "
-          >
-
-            <h3 className="text-xl font-bold">
-              {poem.title}
-            </h3>
-
-            <p>{poem.category}</p>
-
-            <button
-              onClick={() =>
-                handleDeletePoem(poem.id)
-              }
+            <div
+              key={poem.id}
               className="
-              mt-3
-              text-red-500
+              glass
+              p-5
+              rounded-2xl
+              mb-4
               "
             >
-              Delete
-            </button>
 
-          </div>
+              <h3 className="text-xl font-bold">
+                {poem.title}
+              </h3>
 
-        ))}
+              <p>{poem.category}</p>
+
+              <button
+                onClick={() =>
+                  handleDeletePoem(poem.id)
+                }
+                className="
+                mt-3
+                text-red-500
+                "
+              >
+                Delete
+              </button>
+
+            </div>
+
+          ))
+        )}
 
       </div>
 

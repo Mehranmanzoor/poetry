@@ -12,14 +12,37 @@ import {
   orderBy,
   query,
 } from "firebase/firestore";
-import { getFirestoreClient } from "@/lib/firebase";
+import { getFirestoreClient, isFirebaseReady } from "@/lib/firebase";
+
+function getFirebaseErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    if (error.message.includes("permission-denied")) {
+      return "Firestore permission denied. Update your Firestore security rules to allow public reads and authenticated writes.";
+    }
+    return error.message;
+  }
+
+  return "Something went wrong while talking to Firebase.";
+}
 
 export function usePoems() {
   const [poems, setPoems] = useState<Poem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isFirebaseReady()) {
+      setError(
+        "Firebase is not configured. Add your NEXT_PUBLIC_FIREBASE_* values to .env.local."
+      );
+      setLoading(false);
+      return;
+    }
+
     const db = getFirestoreClient();
     if (!db) {
+      setError("Could not connect to Firebase.");
+      setLoading(false);
       return;
     }
 
@@ -33,31 +56,43 @@ export function usePoems() {
       (snapshot) => {
         setPoems(
           snapshot.docs.map((doc) => {
-            const data = doc.data() as any;
+            const data = doc.data() as Record<string, unknown>;
 
-            // Normalize createdAt: Firestore may return a Timestamp.
             let createdAt: string;
-            if (data?.createdAt && typeof data.createdAt.toDate === "function") {
-              createdAt = data.createdAt.toDate().toISOString();
-            } else if (typeof data?.createdAt === "string") {
-              createdAt = data.createdAt;
+            const rawCreatedAt = data.createdAt as
+              | { toDate?: () => Date }
+              | string
+              | undefined;
+
+            if (
+              rawCreatedAt &&
+              typeof rawCreatedAt === "object" &&
+              typeof rawCreatedAt.toDate === "function"
+            ) {
+              createdAt = rawCreatedAt.toDate().toISOString();
+            } else if (typeof rawCreatedAt === "string") {
+              createdAt = rawCreatedAt;
             } else {
               createdAt = new Date().toISOString();
             }
 
             return {
               id: doc.id,
-              title: data.title,
-              slug: data.slug,
-              category: data.category,
-              content: data.content,
+              title: data.title as string,
+              slug: data.slug as string,
+              category: data.category as string,
+              content: data.content as string,
               createdAt,
             } as Poem;
           })
         );
+        setError(null);
+        setLoading(false);
       },
-      (error) => {
-        console.error("Failed to load poems:", error);
+      (snapshotError) => {
+        console.error("Failed to load poems:", snapshotError);
+        setError(getFirebaseErrorMessage(snapshotError));
+        setLoading(false);
       }
     );
 
@@ -65,37 +100,57 @@ export function usePoems() {
   }, []);
 
   const addPoem = async (poem: Omit<Poem, "id">) => {
-    const db = getFirestoreClient();
-    if (!db) {
-      return;
+    if (!isFirebaseReady()) {
+      throw new Error(
+        "Firebase is not configured. Add your NEXT_PUBLIC_FIREBASE_* values to .env.local."
+      );
     }
 
-    try {
-      // Use server timestamp for createdAt to ensure consistent ordering and
-      // avoid client-side clock issues.
-      const payload = {
-        ...poem,
-        createdAt: serverTimestamp(),
-      } as any;
+    const db = getFirestoreClient();
+    if (!db) {
+      throw new Error("Could not connect to Firebase.");
+    }
 
+    const payload = {
+      title: poem.title,
+      slug: poem.slug,
+      category: poem.category,
+      content: poem.content,
+      createdAt: serverTimestamp(),
+    };
+
+    try {
       await addDoc(collection(db, "poems"), payload);
     } catch (err) {
       console.error("Failed to add poem:", err);
-      throw err;
+      throw new Error(getFirebaseErrorMessage(err));
     }
   };
 
   const deletePoem = async (id: string) => {
-    const db = getFirestoreClient();
-    if (!db) {
-      return;
+    if (!isFirebaseReady()) {
+      throw new Error(
+        "Firebase is not configured. Add your NEXT_PUBLIC_FIREBASE_* values to .env.local."
+      );
     }
 
-    await deleteDoc(doc(db, "poems", id));
+    const db = getFirestoreClient();
+    if (!db) {
+      throw new Error("Could not connect to Firebase.");
+    }
+
+    try {
+      await deleteDoc(doc(db, "poems", id));
+    } catch (err) {
+      console.error("Failed to delete poem:", err);
+      throw new Error(getFirebaseErrorMessage(err));
+    }
   };
 
   return {
     poems,
+    loading,
+    error,
     addPoem,
     deletePoem,
   };

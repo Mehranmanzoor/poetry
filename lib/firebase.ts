@@ -2,6 +2,15 @@ import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
+const requiredFirebaseEnvKeys = {
+  apiKey: "NEXT_PUBLIC_FIREBASE_API_KEY",
+  authDomain: "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
+  projectId: "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
+  storageBucket: "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
+  messagingSenderId: "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
+  appId: "NEXT_PUBLIC_FIREBASE_APP_ID",
+} as const;
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -9,27 +18,23 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  ...(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    ? { measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }
+    : {}),
 };
 
-const firebaseEnvKeys: Record<keyof typeof firebaseConfig, string> = {
-  apiKey: "NEXT_PUBLIC_FIREBASE_API_KEY",
-  authDomain: "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
-  projectId: "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
-  storageBucket: "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
-  messagingSenderId: "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
-  appId: "NEXT_PUBLIC_FIREBASE_APP_ID",
-  measurementId: "NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID",
-};
-
-function isFirebaseConfigValid(config: Record<string, string | undefined>) {
-  return Object.values(config).every((value) => typeof value === "string" && value.length > 0);
+function isFirebaseConfigValid() {
+  return Object.entries(requiredFirebaseEnvKeys).every(
+    ([key]) =>
+      typeof firebaseConfig[key as keyof typeof requiredFirebaseEnvKeys] === "string" &&
+      firebaseConfig[key as keyof typeof requiredFirebaseEnvKeys]!.length > 0
+  );
 }
 
 function logMissingFirebaseConfig() {
-  const missingKeys = Object.entries(firebaseConfig)
-    .filter(([, value]) => !value)
-    .map(([key]) => firebaseEnvKeys[key as keyof typeof firebaseConfig]);
+  const missingKeys = Object.entries(requiredFirebaseEnvKeys)
+    .filter(([key]) => !firebaseConfig[key as keyof typeof requiredFirebaseEnvKeys])
+    .map(([, envKey]) => envKey);
 
   if (missingKeys.length) {
     console.error(
@@ -40,12 +45,16 @@ function logMissingFirebaseConfig() {
   }
 }
 
+export function isFirebaseReady() {
+  return typeof window !== "undefined" && isFirebaseConfigValid();
+}
+
 function initializeFirebaseApp() {
   if (typeof window === "undefined") {
     return null;
   }
 
-  if (!isFirebaseConfigValid(firebaseConfig)) {
+  if (!isFirebaseConfigValid()) {
     logMissingFirebaseConfig();
     return null;
   }

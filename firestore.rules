@@ -1,0 +1,13 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /poems/{poemId} {
+      // Anyone can read published poems on the public site.
+      allow read: if true;
+
+      // Only signed-in admins can create, update, or delete poems.
+      allow create, update, delete: if request.auth != null;
+    }
+  }
+}

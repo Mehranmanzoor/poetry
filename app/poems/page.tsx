@@ -4,7 +4,7 @@ import { usePoems } from "@/hooks/use-poems";
 import PoemCard from "@/components/poem-card";
 
 export default function PoemsPage() {
-  const { poems } = usePoems();
+  const { poems, loading, error } = usePoems();
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-10">
@@ -17,7 +17,16 @@ export default function PoemsPage() {
         </p>
       </header>
 
-      {poems.length === 0 ? (
+      {loading ? (
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-12 text-center text-slate-400">
+          Loading poems...
+        </div>
+      ) : error ? (
+        <div className="rounded-3xl border border-red-500/30 bg-red-500/10 p-12 text-center text-red-200">
+          <p className="font-semibold">Could not load poems</p>
+          <p className="mt-2 text-sm text-red-100/80">{error}</p>
+        </div>
+      ) : poems.length === 0 ? (
         <div className="rounded-3xl border border-white/10 bg-white/5 p-12 text-center text-slate-400">
           There are no poems saved yet. Publish a poem from the admin dashboard.
         </div>

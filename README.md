@@ -33,8 +33,24 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 1. Create a Firebase project at https://console.firebase.google.com.
 2. Enable Email/Password authentication in Authentication > Sign-in method.
-3. Create a Firestore database in test or locked mode.
+3. Create a Firestore database.
 4. Add an admin user in Firebase Auth.
+5. Deploy Firestore security rules so everyone can read poems and only admins can write:
+
+```bash
+# Install Firebase CLI if needed: npm install -g firebase-tools
+firebase login
+firebase use your_project_id
+firebase deploy --only firestore:rules
+```
+
+Or paste the rules from `firestore.rules` into Firebase Console → Firestore Database → Rules:
+
+```
+allow read: if true;                          // public poems page
+allow create, update, delete: if request.auth != null;  // admin only
+```
+
 6. Copy your Firebase config values into `.env.local` using `.env.example` as a template.
 7. On Vercel, add the same `NEXT_PUBLIC_FIREBASE_*` variables under Project Settings → Environment Variables.
 

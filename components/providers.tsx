@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeProvider } from "next-themes";
+import { Toaster } from "@/components/ui/sonner";
 
 export function Providers({
   children,
@@ -14,6 +15,7 @@ export function Providers({
       enableSystem
     >
       {children}
+      <Toaster richColors position="top-center" />
     </ThemeProvider>
   );
 }

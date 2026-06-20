@@ -1,6 +1,10 @@
-import { initializeApp, getApps } from "firebase/app";
+import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  getFirestore,
+  initializeFirestore,
+  type Firestore,
+} from "firebase/firestore";
 
 const requiredFirebaseEnvKeys = {
   apiKey: "NEXT_PUBLIC_FIREBASE_API_KEY",
@@ -79,6 +83,8 @@ export function getAuthClient() {
   return getAuth();
 }
 
+let firestoreClient: Firestore | null = null;
+
 export function getFirestoreClient() {
   if (typeof window === "undefined") {
     return null;
@@ -89,5 +95,16 @@ export function getFirestoreClient() {
     return null;
   }
 
-  return getFirestore();
+  if (!firestoreClient) {
+    const app = getApp();
+    try {
+      firestoreClient = initializeFirestore(app, {
+        experimentalAutoDetectLongPolling: true,
+      });
+    } catch {
+      firestoreClient = getFirestore(app);
+    }
+  }
+
+  return firestoreClient;
 }

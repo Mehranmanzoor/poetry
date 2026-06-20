@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Poem } from "@/types/poem";
 import {
   addDoc,
   collection,
   deleteDoc,
   doc,
-  onSnapshot,
+  getDocs,
   serverTimestamp,
   orderBy,
   query,
@@ -25,12 +25,43 @@ function getFirebaseErrorMessage(error: unknown) {
   return "Something went wrong while talking to Firebase.";
 }
 
+function mapPoemDoc(doc: { id: string; data: () => Record<string, unknown> }): Poem {
+  const data = doc.data();
+
+  let createdAt: string;
+  const rawCreatedAt = data.createdAt as
+    | { toDate?: () => Date }
+    | string
+    | undefined;
+
+  if (
+    rawCreatedAt &&
+    typeof rawCreatedAt === "object" &&
+    typeof rawCreatedAt.toDate === "function"
+  ) {
+    createdAt = rawCreatedAt.toDate().toISOString();
+  } else if (typeof rawCreatedAt === "string") {
+    createdAt = rawCreatedAt;
+  } else {
+    createdAt = new Date().toISOString();
+  }
+
+  return {
+    id: doc.id,
+    title: data.title as string,
+    slug: data.slug as string,
+    category: data.category as string,
+    content: data.content as string,
+    createdAt,
+  };
+}
+
 export function usePoems() {
   const [poems, setPoems] = useState<Poem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadPoems = useCallback(async () => {
     if (!isFirebaseReady()) {
       setError(
         "Firebase is not configured. Add your NEXT_PUBLIC_FIREBASE_* values to .env.local."
@@ -46,58 +77,27 @@ export function usePoems() {
       return;
     }
 
-    const poemsQuery = query(
-      collection(db, "poems"),
-      orderBy("createdAt", "desc")
-    );
+    setLoading(true);
 
-    const unsubscribe = onSnapshot(
-      poemsQuery,
-      (snapshot) => {
-        setPoems(
-          snapshot.docs.map((doc) => {
-            const data = doc.data() as Record<string, unknown>;
-
-            let createdAt: string;
-            const rawCreatedAt = data.createdAt as
-              | { toDate?: () => Date }
-              | string
-              | undefined;
-
-            if (
-              rawCreatedAt &&
-              typeof rawCreatedAt === "object" &&
-              typeof rawCreatedAt.toDate === "function"
-            ) {
-              createdAt = rawCreatedAt.toDate().toISOString();
-            } else if (typeof rawCreatedAt === "string") {
-              createdAt = rawCreatedAt;
-            } else {
-              createdAt = new Date().toISOString();
-            }
-
-            return {
-              id: doc.id,
-              title: data.title as string,
-              slug: data.slug as string,
-              category: data.category as string,
-              content: data.content as string,
-              createdAt,
-            } as Poem;
-          })
-        );
-        setError(null);
-        setLoading(false);
-      },
-      (snapshotError) => {
-        console.error("Failed to load poems:", snapshotError);
-        setError(getFirebaseErrorMessage(snapshotError));
-        setLoading(false);
-      }
-    );
-
-    return unsubscribe;
+    try {
+      const poemsQuery = query(
+        collection(db, "poems"),
+        orderBy("createdAt", "desc")
+      );
+      const snapshot = await getDocs(poemsQuery);
+      setPoems(snapshot.docs.map(mapPoemDoc));
+      setError(null);
+    } catch (loadError) {
+      console.error("Failed to load poems:", loadError);
+      setError(getFirebaseErrorMessage(loadError));
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadPoems();
+  }, [loadPoems]);
 
   const addPoem = async (poem: Omit<Poem, "id">) => {
     if (!isFirebaseReady()) {
@@ -121,6 +121,7 @@ export function usePoems() {
 
     try {
       await addDoc(collection(db, "poems"), payload);
+      await loadPoems();
     } catch (err) {
       console.error("Failed to add poem:", err);
       throw new Error(getFirebaseErrorMessage(err));
@@ -141,6 +142,7 @@ export function usePoems() {
 
     try {
       await deleteDoc(doc(db, "poems", id));
+      await loadPoems();
     } catch (err) {
       console.error("Failed to delete poem:", err);
       throw new Error(getFirebaseErrorMessage(err));

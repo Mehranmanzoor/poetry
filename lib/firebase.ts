@@ -52,7 +52,11 @@ export function getAuthClient() {
     return null;
   }
 
-  initializeFirebaseApp();
+  const appInitialized = initializeFirebaseApp();
+  if (!appInitialized) {
+    return null;
+  }
+
   return getAuth();
 }
 
@@ -61,6 +65,10 @@ export function getFirestoreClient() {
     return null;
   }
 
-  initializeFirebaseApp();
+  const appInitialized = initializeFirebaseApp();
+  if (!appInitialized) {
+    return null;
+  }
+
   return getFirestore();
 }

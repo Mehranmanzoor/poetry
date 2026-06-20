@@ -22,11 +22,19 @@ export default function LoginPage() {
       router.push("/admin/dashboard");
     } catch (err) {
       console.error(err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Invalid credentials. Make sure the account exists in Firebase Auth."
-      );
+      const message = err instanceof Error ? err.message : String(err);
+      if (
+        message.includes("Firebase Auth not available") ||
+        message.includes("Missing environment variables")
+      ) {
+        setError(
+          "Firebase is not configured. Add NEXT_PUBLIC_FIREBASE_* vars locally and in Vercel, then reload."
+        );
+      } else {
+        setError(
+          "Invalid credentials. Make sure the account exists in Firebase Auth."
+        );
+      }
     }
   };
 

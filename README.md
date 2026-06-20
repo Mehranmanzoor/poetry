@@ -29,6 +29,14 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Firebase Setup
+
+1. Create a Firebase project at https://console.firebase.google.com.
+2. Enable Email/Password authentication in Authentication > Sign-in method.
+3. Create a Firestore database in test or locked mode.
+4. Add an admin user in Firebase Auth.
+5. Copy your Firebase config values into `.env.local` using `.env.local.example` as a template.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

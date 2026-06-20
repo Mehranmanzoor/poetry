@@ -2,69 +2,58 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
+import { usePoems } from "@/hooks/use-poems";
 
 export default function Dashboard() {
   const router = useRouter();
+  const { user, loading, logout } = useAuth();
+  const { poems, addPoem, deletePoem } = usePoems();
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [content, setContent] = useState("");
-  const [poems, setPoems] = useState<any[]>([]);
 
   useEffect(() => {
-    const auth = localStorage.getItem("admin-auth");
-
-    if (auth !== "true") {
+    if (!loading && !user) {
       router.push("/admin/login");
-      return;
     }
+  }, [loading, user, router]);
 
-    const saved = localStorage.getItem("poems");
-
-    if (saved) {
-      setPoems(JSON.parse(saved));
-    }
-  }, [router]);
-
-  const savePoems = (updated: any[]) => {
-    setPoems(updated);
-    localStorage.setItem(
-      "poems",
-      JSON.stringify(updated)
-    );
-  };
-
-  const addPoem = () => {
+  const handleAddPoem = async () => {
     if (!title || !content) return;
 
     const newPoem = {
-      id: crypto.randomUUID(),
       title,
       category,
       content,
-      slug: title
-        .toLowerCase()
-        .replace(/\s+/g, "-"),
+      slug: title.toLowerCase().replace(/\s+/g, "-"),
       createdAt: new Date().toISOString(),
     };
 
-    savePoems([...poems, newPoem]);
+    await addPoem(newPoem);
 
     setTitle("");
     setCategory("");
     setContent("");
   };
 
-  const deletePoem = (id: string) => {
-    savePoems(
-      poems.filter((p) => p.id !== id)
-    );
+  const handleDeletePoem = async (id: string) => {
+    await deletePoem(id);
   };
 
-  const logout = () => {
-    localStorage.removeItem("admin-auth");
+  const handleLogout = async () => {
+    await logout();
     router.push("/admin/login");
   };
+
+  if (loading) {
+    return (
+      <main className="max-w-7xl mx-auto p-8">
+        <p>Loading dashboard…</p>
+      </main>
+    );
+  }
 
   return (
     <main className="max-w-7xl mx-auto p-8">
@@ -76,7 +65,7 @@ export default function Dashboard() {
         </h1>
 
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className="bg-red-500 px-4 py-2 rounded-xl"
         >
           Logout
@@ -115,7 +104,7 @@ export default function Dashboard() {
         />
 
         <button
-          onClick={addPoem}
+          onClick={handleAddPoem}
           className="
           bg-white
           text-black
@@ -155,7 +144,7 @@ export default function Dashboard() {
 
             <button
               onClick={() =>
-                deletePoem(poem.id)
+                handleDeletePoem(poem.id)
               }
               className="
               mt-3

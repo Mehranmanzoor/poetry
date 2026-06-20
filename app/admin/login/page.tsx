@@ -2,39 +2,28 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { login } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const [username, setUsername] =
-    useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const [password, setPassword] =
-    useState("");
-
-  const [error, setError] =
-    useState("");
-
-  const handleLogin = (
+  const handleLogin = async (
     e: React.FormEvent
   ) => {
     e.preventDefault();
+    setError("");
 
-    if (
-      username === "admin" &&
-      password === "123456"
-    ) {
-      localStorage.setItem(
-        "admin-auth",
-        "true"
-      );
-
-      router.push(
-        "/admin/dashboard"
-      );
-    } else {
+    try {
+      await login(email, password);
+      router.push("/admin/dashboard");
+    } catch (err) {
+      console.error(err);
       setError(
-        "Invalid Credentials"
+        "Invalid credentials. Make sure the account exists in Firebase Auth."
       );
     }
   };
@@ -65,13 +54,11 @@ export default function LoginPage() {
         </h1>
 
         <input
-          type="text"
-          placeholder="Username"
-          value={username}
+          type="email"
+          placeholder="Email"
+          value={email}
           onChange={(e) =>
-            setUsername(
-              e.target.value
-            )
+            setEmail(e.target.value)
           }
           className="
           w-full
@@ -87,9 +74,7 @@ export default function LoginPage() {
           placeholder="Password"
           value={password}
           onChange={(e) =>
-            setPassword(
-              e.target.value
-            )
+            setPassword(e.target.value)
           }
           className="
           w-full

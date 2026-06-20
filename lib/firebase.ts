@@ -12,8 +12,31 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+function isFirebaseConfigValid(config: Record<string, string | undefined>) {
+  return Object.values(config).every((value) => typeof value === "string" && value.length > 0);
+}
+
+function logMissingFirebaseConfig() {
+  const missingKeys = Object.entries(firebaseConfig)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+
+  if (missingKeys.length) {
+    console.error(
+      "[Firebase] Missing environment variables:",
+      missingKeys.join(", "),
+      "\nPlease set the NEXT_PUBLIC_FIREBASE_* variables locally and in Vercel."
+    );
+  }
+}
+
 function initializeFirebaseApp() {
   if (typeof window === "undefined") {
+    return null;
+  }
+
+  if (!isFirebaseConfigValid(firebaseConfig)) {
+    logMissingFirebaseConfig();
     return null;
   }
 

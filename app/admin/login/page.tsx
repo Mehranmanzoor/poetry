@@ -23,7 +23,9 @@ export default function LoginPage() {
     } catch (err) {
       console.error(err);
       setError(
-        "Invalid credentials. Make sure the account exists in Firebase Auth."
+        err instanceof Error
+          ? err.message
+          : "Invalid credentials. Make sure the account exists in Firebase Auth."
       );
     }
   };

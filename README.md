@@ -35,7 +35,8 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 2. Enable Email/Password authentication in Authentication > Sign-in method.
 3. Create a Firestore database in test or locked mode.
 4. Add an admin user in Firebase Auth.
-5. Copy your Firebase config values into `.env.local` using `.env.local.example` as a template.
+6. Copy your Firebase config values into `.env.local` using `.env.example` as a template.
+7. On Vercel, add the same `NEXT_PUBLIC_FIREBASE_*` variables under Project Settings → Environment Variables.
 
 ## Deploy on Vercel
 
